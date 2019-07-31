@@ -29,12 +29,11 @@ def tempPlotter(mypd,params):
 
     ax.set_title(params['Title'])
     ax.plot(dat, color='black', lw = 0.5, alpha = 0.5) # this is the curve that is plotted
-    ax.fill_between(dat.index, dat, dat.median(), where=dat>=dat.median(), color='#ff8080', lw = 0.5, alpha = 0.5)
-    ax.fill_between(dat.index, dat, dat.median(), where=dat<=dat.median(), color='#004d99', lw = 0.5, alpha = 0.5)
-    ax.axhline(dat.median(), color='black', lw=0.5)
+    ax.fill_between(dat.index, dat, 0, where=dat>=0, color='#ff8080', lw = 0.5, alpha = 0.5) #red fill for positive values
+    ax.fill_between(dat.index, dat, 0, where=dat<=0, color='#004d99', lw = 0.5, alpha = 0.5) #blueish fill for negative values
     ax.legend(loc = 0)
 
     ax.set(xlabel = 'Time', ylabel = 'Temperature $\degree$ C')
-    plt.savefig('fig/'+params['start']+'_'+params['end']+'_'+params['filename'], dpi = 300)
+    plt.savefig(params['start']+'_'+params['end']+'_'+params['filename']+'.pdf', dpi = 300)
 
     plt.show()
