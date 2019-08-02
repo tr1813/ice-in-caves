@@ -1,3 +1,20 @@
+""" A module with functions I called GNIP.
+------------------------------------------
+
+It contains functions for reading the WISER csv files, 
+computing the Precipitation Weighted Least Squares Regression (PWLSR)
+and plotting of all sorts. 
+
+It can be loaded in a Jupyter Notebook using the code:
+
+ %aimport GNIP
+
+ ------------------------------------------"""
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
 def GNIP_csv_reader(filename):
 
 	""" 
