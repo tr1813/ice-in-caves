@@ -24,22 +24,22 @@ def csv_read(filename):
 
 	dataframe = pd.read_csv(filename,
 		parse_dates=True,
-		usecols=[12,13,14,16,18,23], # these columns correspond to Date, Begin of Period, O18, H2, Precipitation
-		index_col="Date")
+		usecols=[2,12,13,14,16,18,23], # these columns correspond to Date, Begin of Period, O18, H2, Precipitation
+		index_col=["Site","Date"])
 	dataframe.dropna(inplace=True)
 
 	return dataframe
 
-def weighted_avg(dataframe,series,weights):
+def weighted_avg(dataframe,site,series,weights):
 	""" 
 	Takes a GNIP dataframe and returns a dataframe the amount weighted annual mean of monthly precipitation.
 	"""
 	
-	year_avg = (dataframe[series]*dataframe[weights]).resample("y").sum()/(dataframe[weights].resample("y").sum())
+	year_avg = (dataframe.loc[site][series]*dataframe.loc[site][weights]).resample("y").sum()/(dataframe.loc[site][weights].resample("y").sum())
 
 	return year_avg
 
-def quarterly_boxplot(dataframe,filename='sample_boxplot.pdf'):
+def quarterly_boxplot(dataframe,site,filename='sample_boxplot.pdf'):
 	
 	#create a figure with two subplots. Size 8 inches by 5
 	fig,(ax_H2,ax_O18) = plt.subplots(1,2,figsize=(8,5))
@@ -49,8 +49,8 @@ def quarterly_boxplot(dataframe,filename='sample_boxplot.pdf'):
 
 	#building the two subfigures
 	for ax,series,labels in zip((ax_H2,ax_O18),("H2","O18"),("$\delta^{2}$H","$\delta^{18}$O")):
-		bp = dataframe.boxplot(column=[series], 
-			by=dataframe.index.quarter, 
+		bp = dataframe.loc[site].boxplot(column=[series], 
+			by=dataframe.loc[site].index.quarter, 
 			ax=ax, 
 			showfliers=True,
 			grid=False,return_type = 'dict')
@@ -74,15 +74,15 @@ def quarterly_boxplot(dataframe,filename='sample_boxplot.pdf'):
 	plt.show()
 
 
-def PWLSR(dataframe):
+def PWLSR(dataframe,site):
 
 	"""Computes the Precipitation Weighted Least Squares Regression on a standard monthly GNIP dataset.
 	Based on the formulae by Hughes and Crawford.
 	"""
 
-	xi = dataframe["O18"]
-	yi = dataframe["H2"]
-	pi = dataframe["Precipitation"]
+	xi = dataframe.loc[site]["O18"]
+	yi = dataframe.loc[site]["H2"]
+	pi = dataframe.loc[site]["Precipitation"]
 	n = len(xi)
 
 	#plug into formula by Hughes and Crawford (2012), equation (9) for the slope
@@ -120,24 +120,24 @@ def GMWL(x):
 	#global meteoric waterline as defined by Craig (1961)
     return 8*x + 10
 
-def LMWL_PWLSR(x,dataframe):
+def LMWL_PWLSR(x,dataframe,site):
 	#local meteoric waterline as defined by precipitation weighted least squares regression
 	
-	a = PWLSR(dataframe)['slope']
-	b = PWLSR(dataframe)['intercept']
+	a = PWLSR(dataframe,site)['slope']
+	b = PWLSR(dataframe,site)['intercept']
 
 	return a*x + b
 
-def LMWL_OLSR(x,dataframe):
-	slope, intercept, r_value, p_value, std_err = stats.linregress(dataframe["O18"],dataframe["H2"])
+def LMWL_OLSR(x,dataframe,site):
+	slope, intercept, r_value, p_value, std_err = stats.linregress(dataframe.loc[site]["O18"],dataframe.loc[site]["H2"])
 
 	return slope*x+intercept
 
-def LMWL_plotter(dataframe,plot_title="Plot title",filename ="../fig/monthly_GNIP_samples.pdf"):
+def LMWL_plotter(dataframe,site,plot_title="Plot title",filename ="../fig/monthly_GNIP_samples.pdf"):
 	#plot first the GMWL.
 
-	O18 = dataframe["O18"]
-	H2 = dataframe["H2"]
+	O18 = dataframe.loc[site]["O18"]
+	H2 = dataframe.loc[site]["H2"]
 
 	xi = np.linspace(min(O18)-1,max(O18)+1,100)
 
@@ -145,8 +145,8 @@ def LMWL_plotter(dataframe,plot_title="Plot title",filename ="../fig/monthly_GNI
 
 	ax.plot(O18,H2,'.',label='Monthly samples') #points, monthly GNIP data
 	ax.plot(xi,GMWL(xi),label="Global Meteoric Water Line") #the GMWL defined by Craig (1961)
-	ax.plot(xi,LMWL_PWLSR(xi,dataframe),label="Local Meteoric Water Line (PWLSR") #Precipitation Weighted LSR
-	ax.plot(xi,LMWL_OLSR(xi,dataframe),label="Local Meteoric Water Line (OLSR)") #Ordinary LSR
+	ax.plot(xi,LMWL_PWLSR(xi,dataframe,site),label="Local Meteoric Water Line (PWLSR)") #Precipitation Weighted LSR
+	ax.plot(xi,LMWL_OLSR(xi,dataframe,site),label="Local Meteoric Water Line (OLSR)") #Ordinary LSR
 	
 	ax.legend()
 
