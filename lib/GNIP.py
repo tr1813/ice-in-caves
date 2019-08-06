@@ -39,26 +39,39 @@ def weighted_avg(dataframe,site,series,weights):
 
 	return year_avg
 
-def quarterly_boxplot(dataframe,site,filename='sample_boxplot.pdf'):
+def period_boxplot(dataframe,site,filename='sample_boxplot.pdf',freq='Q'):
 	
 	#create a figure with two subplots. Size 8 inches by 5
-	fig,(ax_H2,ax_O18) = plt.subplots(1,2,figsize=(8,5))
+	fig,(ax_H2,ax_O18) = plt.subplots(1,2,figsize=(8,4))
 
 	#define the quarters. 
 	quarters = ["Winter","Spring","Summer","Autumn"]
+	months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
 
 	#building the two subfigures
 	for ax,series,labels in zip((ax_H2,ax_O18),("H2","O18"),("$\delta^{2}$H","$\delta^{18}$O")):
-		bp = dataframe.loc[site].boxplot(column=[series], 
-			by=dataframe.loc[site].index.quarter, 
-			ax=ax, 
-			showfliers=True,
-			grid=False,return_type = 'dict')
+		if freq=='Q':
+			bp = dataframe.loc[site].boxplot(column=[series], 
+				by=dataframe.loc[site].index.quarter, 
+				ax=ax, 
+				showfliers=True,
+				grid=False,return_type = 'dict')
+			ax.set_xticklabels(quarters)
+		else:
+			if freq=='M' or freq=='m':
+				bp = dataframe.loc[site].boxplot(column=[series], 
+					by=dataframe.loc[site].index.month, 
+					ax=ax, 
+					showfliers=True,
+					grid=False,return_type = 'dict')
+				ax.set_xticklabels(months)
+			else:
+				print("freq must be either Q (quarterly) or M (monthly)")
 
 		#setting the appropriate labels
 		ax.set_ylabel(labels+" [‰] (VSMOW)")
 		ax.set_xlabel("")
-		ax.set_xticklabels(quarters)
+		
 		ax.tick_params(direction='in',top=True)
 
 		#further line customisations using a workaround
@@ -113,7 +126,7 @@ def PWLSR(dataframe,site):
 	r2 = k8/k9
 
 	#this returns a dictionary with the computed variables. 
-	return dict(zip(['slope','intercept','$\sigma_{a(w)}$','$\sigma_{b(w)}$','std. error','$R^2$'],[a,b,sigma_aw,sigma_bw,S_yx_w,r2]))
+	return dict(zip(['slope','intercept','$\sigma_{a(w)}$','$\sigma_{b(w)}$','std. error','$R^2$','N'],[a,b,sigma_aw,sigma_bw,S_yx_w,r2,n]))
 
 
 def GMWL(x):
