@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import matplotlib.patches as mpatches
 from matplotlib.lines import Line2D
+import lib.GNIP as gnip
 
 def read_excel(filename):
 
@@ -148,9 +149,19 @@ def transectPlotter(df,transects,filename='../fig/isotope_transect.pdf'):
 	plt.savefig(filename,dpi=300)
 	plt.show()
 
-def crossPlotter(df,transects,filename='../fig/isotope_crossplot_sample.pdf'):
-
+def figureIsotopes(df,transects,filename='../fig/isotope_crossplot_sample.pdf'):
 	
+	fig, ax = plt.subplots(figsize = (8,5))
+
+	plotIsotopes(df,transects,ax= ax)
+
+	ax.set(ylabel = '$\delta^{2}$H [‰] (VSMOW)', xlabel = '$\delta^{18}$O [‰] (VSMOW)')
+	ax.legend()
+	plt.savefig(filename, dpi = 300)
+
+	plt.show()
+
+def plotIsotopes(df,transects,ax=None):
 	"""
 	WHAT THIS DOES:
 	---------------
@@ -165,9 +176,6 @@ def crossPlotter(df,transects,filename='../fig/isotope_crossplot_sample.pdf'):
 	This does work for individual samples of ice or drips which have column height -999.
 	
 	"""
-
-	fig, ax = plt.subplots(figsize = (8,5))
-
 
 	for i in transects:
 
@@ -184,9 +192,21 @@ def crossPlotter(df,transects,filename='../fig/isotope_crossplot_sample.pdf'):
 			elinewidth = 1,
 			ecolor = 'black')
 
+	return ax
+
+def full_plotter(df_ISO,transects,df_GNIP,site,filename="../fig/isotopes/combined_ice_GNIP_figure.pdf"):
+	#plotting the data relative to a 
+	fig,ax = plt.subplots(figsize=(8,5))
+
+	ax1 = plotIsotopes(df_ISO,transects,ax = ax)
+	ax.set_xlim(ax1.get_xlim())
+	ax.set_ylim(ax1.get_ylim())
+	ax2 = gnip.plot_LMWL(df_GNIP,site,ax = ax)
 
 	ax.set(ylabel = '$\delta^{2}$H [‰] (VSMOW)', xlabel = '$\delta^{18}$O [‰] (VSMOW)')
+	ax.tick_params(direction='in', top=True,right=True)
 	ax.legend()
-	plt.savefig(filename, dpi = 300)
-
+	plt.tight_layout()
+	plt.savefig(filename,dpi= 300)
 	plt.show()
+	
