@@ -17,6 +17,24 @@ import matplotlib.pyplot as plt
 from scipy import stats
 import scipy as sp
 
+def ANIP_excel_read(filename):
+
+	"""
+	For some of the ANIP data, which comes as an excel file?
+
+	"""
+	names=['End date','Precipitation','Temperature','O18','s.d. d18O',"H2","s.d. d2H","H3", 's.d. H3']
+	columns=[i for i in range(1,13,1)]
+	dataframe = pd.read_excel(filename,
+		sheet_name="Daten_T",
+		skiprows=[0,1,2],
+		usecols=columns,
+		parse_dates = True,day_first=True, index_col=[0,1])
+	dataframe.columns=names
+	dataframe.rename_axis(['Site','Date'], inplace=True)
+
+	return dataframe
+
 def csv_read(filename):
 
 	""" 
@@ -43,14 +61,15 @@ def weighted_avg(dataframe,site,series,weights):
 def period_boxplot(dataframe,site,filename='sample_boxplot.pdf',freq='Q'):
 	
 	#create a figure with two subplots. Size 8 inches by 5
-	fig,(ax_H2,ax_O18) = plt.subplots(1,2,figsize=(8,4))
+	fig,(ax_H2,ax_O18,ax_d_ex) = plt.subplots(1,3,figsize=(13,4))
 
 	#define the quarters. 
 	quarters = ["Winter","Spring","Summer","Autumn"]
 	months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
 
 	#building the two subfigures
-	for ax,series,labels in zip((ax_H2,ax_O18),("H2","O18"),("$\delta^{2}$H","$\delta^{18}$O")):
+	dataframe["d-excess"]=dataframe["H2"]-8*dataframe["O18"]
+	for ax,series,labels in zip((ax_H2,ax_O18,ax_d_ex),("H2","O18","d-excess"),("$\delta^{2}$H","$\delta^{18}$O",'d-excess')):
 		if freq=='Q':
 			bp = dataframe.loc[site].boxplot(column=[series], 
 				by=dataframe.loc[site].index.quarter, 
@@ -169,7 +188,7 @@ def plot_monthly(dataframe,site,ax=None):
 	O18 = dataframe.loc[site]["O18"]
 	H2 = dataframe.loc[site]["H2"]
 
-	ax.plot(O18,H2,'D',markersize=3,label='Monthly samples') #points, monthly GNIP data
+	ax.plot(O18,H2,'D',markersize=3,label='Samples') #points, monthly GNIP data
 
 	return ax
 
@@ -265,5 +284,14 @@ def plot_ci_bootstrap(xs, ys, resid, nboot=500, ax=None):
         ax.plot(xs, sp.polyval(pc, xs), "b-", linewidth=2, alpha=3.0 / float(nboot))
 
     return ax
-    
+   
+def get_stats(dataframe,site):
+	O18 = dataframe.loc[site]["O18"]
+	H2 = dataframe.loc[site]["H2"]
+	d_ex = H2-8*O18
+
+	for i in (O18,H2,d_ex):
+		
+		return i.min(),i.max(),i.mean(),i.median(),i.std()
+
 
