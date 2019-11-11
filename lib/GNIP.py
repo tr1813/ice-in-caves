@@ -148,6 +148,13 @@ def PWLSR(dataframe,site):
 	#this returns a dictionary with the computed variables. 
 	return dict(zip(['slope','intercept','$\sigma_{a(w)}$','$\sigma_{b(w)}$','std. error','$R^2$','N'],[a,b,sigma_aw,sigma_bw,S_yx_w,r2,n]))
 
+def OLSR_slope_estimate(xi,yi):
+
+	n = len(xi)
+	A = (1/(n-2))*np.sum((yi-yi.mean())**2)
+	B = np.sum((xi-xi.mean())**2)
+	sigma_a = np.sqrt(A/B)
+
 
 def GMWL(x):
 	#global meteoric waterline as defined by Craig (1961)
@@ -166,23 +173,32 @@ def LMWL_OLSR(x,dataframe,site):
 
 	return slope*x+intercept
 
-def figure_LMWL(dataframe,site,plot_title="Plot title",filename ="../fig/monthly_GNIP_samples.pdf"):
+def figure_LMWL(dataframe,site,plot_title="Plot title",filename ="../fig/monthly_GNIP_samples.pdf",ax=None,legend='off'):
 
-	fig,ax = plt.subplots(figsize = (8,5))
+	#fig,ax = plt.subplots(figsize = (8,5))
 
 	plot_monthly(dataframe,site,ax=ax)
-	plot_LMWL(dataframe,site,ax=ax)
+	plot_LMWL(dataframe,site,ax=ax,option='grey')
 	
-	ax.legend()
+	if legend == 'on':
+		ax.legend(prop={'size': 8})
 	
 	ax.set_xlabel("$\delta^{18}$O [‰] (VSMOW)")
 	ax.set_ylabel("$\delta^{2}$H [‰] (VSMOW)")
+	ax.title.set_text(plot_title)
 
 	ax.tick_params(direction='in',top=True,right=True)
-	plt.title(plot_title)
-	plt.tight_layout()
-	plt.savefig(filename,dpi= 300)
-	plt.show()
+	
+	params = PWLSR(dataframe,site)
+	posx=ax.get_xlim()[1]-(ax.get_xlim()[1]-ax.get_xlim()[0])/3
+	posy=ax.get_ylim()[0]+(ax.get_ylim()[1]-ax.get_ylim()[0])/4
+	ax.text(posx,posy,"y = {:.2f}x {:+.2f}\n$R^2$={:.2f}".format(params['slope'],params['intercept'],params['$R^2$']),color = 'black')
+
+	#plt.title(plot_title)
+	#plt.tight_layout()
+	#plt.savefig(filename,dpi= 300)
+	#plt.show()
+	return ax
 
 def plot_monthly(dataframe,site,ax=None):
 	O18 = dataframe.loc[site]["O18"]
@@ -193,7 +209,7 @@ def plot_monthly(dataframe,site,ax=None):
 	return ax
 
 
-def plot_LMWL(dataframe,site,ax=None):
+def plot_LMWL(dataframe,site,ax=None, option='color'):
 	#plot first the GMWL.
 
 	O18 = dataframe.loc[site]["O18"]
@@ -211,8 +227,13 @@ def plot_LMWL(dataframe,site,ax=None):
 	yi = LMWL_PWLSR(xi,dataframe,site)
 
 	#ax.plot(xi,GMWL(xi),label="Global Meteoric Water Line") #the GMWL defined by Craig (1961)
-	ax.plot(xi,yi,lw=0.75,color = 'firebrick',label="Local Meteoric Water Line (PWLSR)") #Precipitation Weighted LSR
+	if option=='color':
+		ax.plot(xi,yi,lw=0.75,color = 'firebrick',label="Local Meteoric Water Line (PWLSR)") #Precipitation Weighted LSR
 	#ax.plot(xi,LMWL_OLSR(xi,dataframe,site),label="Local Meteoric Water Line (OLSR)") #Ordinary LSR
+	else:
+		if option == 'grey':
+			ax.plot(xi,yi,lw=0.75,color = 'black',label="Local Meteoric Water Line (PWLSR)")
+
 	
 	plot_ci_manual(t,s_err,n,O18,xi,yi,ax=ax)
 	plot_pi_manual(t,s_err,n,O18,xi,yi,ax=ax)
@@ -246,7 +267,7 @@ def plot_ci_manual(t, s_err, n, x, x2, y2, ax=None):
         ax = plt.gca()
 
     ci = t * s_err * np.sqrt(1/n + (x2 - np.mean(x))**2 / np.sum((x - np.mean(x))**2))
-    ax.fill_between(x2, y2 + ci, y2 - ci, color="orange", edgecolor="",alpha= 0.75,label="95% Confidence Interval")
+    ax.fill_between(x2, y2 + ci, y2 - ci, color="grey", edgecolor="",alpha= 0.25,label="95% Confidence Interval")
 
     return ax
 
